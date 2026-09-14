@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Mistake Tracker — AI Study Engine</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d', /* Dark forest green header */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['Fira Code', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- KaTeX for LaTeX Math ($...$ and $$...$$) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.5); }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            
+            <!-- Logo & Subject Selector -->
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-900 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                    <i data-lucide="calculator" class="w-5 h-5"></i>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="subjectFilter" onchange="app.setSubject(this.value)" 
+                            class="bg-emerald-900 text-white font-semibold text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer">
+                        <option value="All">All Subjects</option>
+                        <option value="Math" selected>📐 Math Tracker</option>
+                        <option value="Physics">⚡ Physics</option>
+                        <option value="Coding">💻 Coding / CS</option>
+                        <option value="Chemistry">🧪 Chemistry</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- View Switcher Tabs -->
+            <div class="hidden md:flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl gap-1 text-xs font-semibold">
+                <button onclick="app.setView('table')" id="viewBtn-table" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all bg-white dark:bg-slate-700 shadow-xs">
+                    <i data-lucide="table" class="w-4 h-4"></i> Spreadsheet
+                </button>
+                <button onclick="app.setView('cards')" id="viewBtn-cards" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900">
+                    <i data-lucide="layout-grid" class="w-4 h-4"></i> Cards
+                </button>
+                <button onclick="app.setView('analytics')" id="viewBtn-analytics" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900">
+                    <i data-lucide="pie-chart" class="w-4 h-4"></i> Diagnostics
+                </button>
+            </div>
+
+            <!-- Action Controls & API Key config -->
+            <div class="flex items-center gap-2">
+                <button onclick="app.openSettings()" class="border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs sm:text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
+                    <span class="hidden sm:inline">Gemini API</span>
+                    <span id="apiKeyDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                </button>
+
+                <button onclick="app.startReviewSession()" class="bg-amber-500 hover:bg-amber-600 text-white font-medium text-xs sm:text-sm px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm transition">
+                    <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                    <span>Drill (<span id="dueBadge">0</span>)</span>
+                </button>
+                
+                <button onclick="app.openModal()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-medium text-xs sm:text-sm px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm transition">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Add Mistake</span>
+                </button>
+                
+                <button onclick="app.toggleTheme()" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle Dark/Light">
+                    <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+        
+        <!-- Summary Stat Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div class="text-xs text-slate-500 font-medium">Tracked Mistakes</div>
+                <div class="text-2xl font-bold mt-1" id="statTotal">0</div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div class="text-xs text-rose-500 font-medium">Needs Review</div>
+                <div class="text-2xl font-bold mt-1 text-rose-600 dark:text-rose-400" id="statReview">0</div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div class="text-xs text-emerald-600 font-medium">Mastered</div>
+                <div class="text-2xl font-bold mt-1 text-emerald-600 dark:text-emerald-400" id="statMastered">0</div>
+            </div>
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div class="text-xs text-amber-500 font-medium">Top Mistake Reason</div>
+                <div class="text-sm font-semibold mt-2 truncate text-slate-700 dark:text-slate-300" id="statTopReason">-</div>
+            </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div class="relative flex-1 min-w-[240px]">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" oninput="app.render()" placeholder="Search problems, reasons, takeaways, formulas..."
+                       class="w-full pl-9 pr-4 py-1.5 text-xs sm:text-sm rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-700 outline-none">
+            </div>
+            <div class="flex items-center gap-2 flex-wrap text-xs">
+                <select id="reasonFilter" onchange="app.render()" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 outline-none">
+                    <option value="All">All Error Types</option>
+                    <option value="Conceptual Error">🧠 Conceptual Error</option>
+                    <option value="Calculation / Silly Slip">⚡ Calculation Slip</option>
+                    <option value="Misread Question">👁️ Misread Question</option>
+                    <option value="Formula Forgotten">📖 Formula Forgotten</option>
+                    <option value="Time Pressure">⏱️ Time Pressure</option>
+                </select>
+
+                <select id="statusFilter" onchange="app.render()" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 outline-none">
+                    <option value="All">All Statuses</option>
+                    <option value="learning">🔴 Learning</option>
+                    <option value="reviewing">🟡 Reviewing</option>
+                    <option value="mastered">🟢 Mastered</option>
+                </select>
+
+                <button onclick="app.exportJSON()" class="p-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg" title="Export JSON">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                </button>
+                <label class="p-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer" title="Import JSON">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                    <input type="file" accept=".json" onchange="app.importJSON(event)" class="hidden">
+                </label>
+            </div>
+        </div>
+
+        <!-- SPREADSHEET TABLE -->
+        <div id="tableView" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[900px]">
+                    <thead>
+                        <tr class="bg-emerald-900 text-white text-xs font-semibold tracking-wide select-none">
+                            <th class="py-3.5 px-4 w-[28%] border-r border-emerald-800/60">Incorrect Problem</th>
+                            <th class="py-3.5 px-4 w-[24%] border-r border-emerald-800/60">Correct Answer & Solution</th>
+                            <th class="py-3.5 px-4 w-[20%] border-r border-emerald-800/60">Reason for Mistake</th>
+                            <th class="py-3.5 px-4 w-[20%] border-r border-emerald-800/60">How to Avoid the Mistake Again</th>
+                            <th class="py-3.5 px-3 w-[8%] text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs sm:text-sm"></tbody>
+                </table>
+            </div>
+            <div id="emptyTableState" class="hidden py-16 text-center text-slate-400 dark:text-slate-500">
+                <i data-lucide="clipboard-check" class="w-12 h-12 mx-auto stroke-1 text-slate-300 dark:text-slate-600 mb-2"></i>
+                <p class="font-medium">No mistakes logged matching filters!</p>
+            </div>
+        </div>
+
+        <!-- CARDS VIEW -->
+        <div id="cardsView" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+        <!-- ANALYTICS VIEW -->
+        <div id="analyticsView" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <h3 class="font-semibold text-sm mb-4 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-600"></i> Error Root Cause Breakdown
+                    </h3>
+                    <div id="reasonBars" class="space-y-3"></div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <h3 class="font-semibold text-sm mb-4 flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> Spaced Repetition Mastery
+                    </h3>
+                    <div id="masteryBreakdown" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Settings & Gemini API Config -->
+    <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-base font-bold flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-emerald-600"></i> Gemini AI Configuration
+                </h3>
+                <button onclick="app.closeSettings()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                Enter your Google AI Studio API key. Works with <b>Gemini 2.5 Flash, Gemini 3.7 Flash, and 2.0 Flash</b>.
+            </p>
+            <div class="space-y-3 text-xs sm:text-sm">
+                <div>
+                    <label class="block font-semibold mb-1">Gemini API Key</label>
+                    <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none font-mono focus:ring-2 focus:ring-emerald-600">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Model Selection</label>
+                    <select id="geminiModelSelect" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none font-mono focus:ring-2 focus:ring-emerald-600">
+                        <option value="gemini-2.5-flash">gemini-2.5-flash (Recommended)</option>
+                        <option value="gemini-3.7-flash">gemini-3.7-flash</option>
+                        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="app.closeSettings()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 font-medium text-xs">Cancel</button>
+                <button onclick="app.saveApiKey()" class="px-5 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white font-medium text-xs">Save Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add / Edit Mistake -->
+    <div id="mistakeModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden">
+            
+            <div class="px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h2 id="modalTitle" class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-emerald-700"></i> Record Mistake
+                </h2>
+                <button onclick="app.closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="mistakeForm" onsubmit="app.saveMistake(event)" class="p-6 overflow-y-auto space-y-4 text-xs sm:text-sm">
+                <input type="hidden" id="mistakeId">
+
+                <!-- AI Quick Scan Dropzone -->
+                <div class="bg-gradient-to-r from-emerald-900/10 via-teal-900/5 to-transparent border border-emerald-700/30 rounded-xl p-3.5 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="p-1.5 bg-emerald-700 text-white rounded-lg"><i data-lucide="sparkles" class="w-4 h-4"></i></span>
+                            <span class="font-bold text-emerald-900 dark:text-emerald-300">Gemini AI Auto-Analysis</span>
+                        </div>
+                        <button type="button" id="aiScanBtn" onclick="app.analyzeWithAI()" class="bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition">
+                            <i data-lucide="scan" class="w-3.5 h-3.5"></i>
+                            <span id="aiScanBtnText">Auto-Detect & Fill</span>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Upload, paste (<kbd class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px]">Ctrl+V</kbd>) an image, or type notes below, then click Auto-Detect.</p>
+                    
+                    <div class="flex items-center gap-3 pt-1">
+                        <input type="file" id="inputImage" accept="image/*" onchange="app.handleImageUpload(event)" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-800 file:text-white hover:file:bg-emerald-900 cursor-pointer">
+                        <button type="button" id="removeImgBtn" onclick="app.clearImage()" class="text-xs text-rose-500 hidden hover:underline">Remove</button>
+                    </div>
+                    <div id="imagePreviewContainer" class="hidden relative mt-2">
+                        <img id="imagePreview" class="max-h-36 rounded-lg border border-slate-200 dark:border-slate-700 object-contain bg-black/5">
+                        <div id="aiLoadingOverlay" class="absolute inset-0 bg-slate-900/80 backdrop-blur-xs rounded-lg flex flex-col items-center justify-center text-white hidden">
+                            <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-emerald-400 mb-2"></i>
+                            <span class="text-xs font-semibold text-emerald-200" id="aiStatusText">Analyzing with Gemini...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold mb-1">Subject</label>
+                        <select id="inputSubject" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 outline-none">
+                            <option value="Math">📐 Math</option>
+                            <option value="Physics">⚡ Physics</option>
+                            <option value="Coding">💻 Coding / CS</option>
+                            <option value="Chemistry">🧪 Chemistry</option>
+                            <option value="Other">📚 Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Reason Category</label>
+                        <select id="inputReason" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 outline-none">
+                            <option value="Conceptual Error">🧠 Conceptual Error</option>
+                            <option value="Calculation / Silly Slip">⚡ Calculation / Silly Slip</option>
+                            <option value="Misread Question">👁️ Misread Question</option>
+                            <option value="Formula Forgotten">📖 Formula Forgotten</option>
+                            <option value="Time Pressure">⏱️ Time Pressure</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold mb-1">
+                        Incorrect Problem <span class="text-slate-400 font-normal">(LaTeX $...$ supported)</span>
+                    </label>
+                    <textarea id="inputProblem" rows="3" required placeholder="State the question or what went wrong..."
+                              class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none font-sans focus:ring-2 focus:ring-emerald-700"></textarea>
+                </div>
+
+                <div>
+                    <label class="block font-semibold mb-1">Correct Answer & Full Solution</label>
+                    <textarea id="inputSolution" rows="3" required placeholder="Step-by-step correct derivation or answer..."
+                              class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-700"></textarea>
+                </div>
+
+                <div>
+                    <label class="block font-semibold mb-1">Why Did You Make This Mistake? (Root trigger)</label>
+                    <textarea id="inputSpecificReason" rows="2" placeholder="e.g. Forgot to flip the inequality sign when dividing by negative"
+                              class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block font-semibold mb-1 text-emerald-800 dark:text-emerald-400">Rule / Strategy to Avoid in Future</label>
+                    <input type="text" id="inputAvoidance" placeholder="e.g. Always circle negative multipliers before dividing"
+                           class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-700">
+                </div>
+
+                <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+                    <button type="button" onclick="app.closeModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white font-medium">Save Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Drill Modal -->
+    <div id="drillModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-xl rounded-2xl shadow-2xl p-6 flex flex-col min-h-[420px] max-h-[90vh]">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                <span class="text-xs font-semibold px-2.5 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full" id="drillSubjectBadge">Math</span>
+                <span class="text-xs text-slate-400 font-mono" id="drillCounter">1 / 5</span>
+                <button onclick="app.closeDrill()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="my-auto py-6 space-y-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Problem to Solve:</div>
+                <div id="drillProblem" class="text-base sm:text-lg font-medium leading-relaxed"></div>
+                <div id="drillImageContainer"></div>
+
+                <div id="drillSolutionSection" class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 hidden space-y-3">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Correct Solution:</div>
+                    <div id="drillSolution" class="text-sm bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/40"></div>
+                    <div class="text-xs text-slate-500"><b class="text-slate-700 dark:text-slate-300">Takeaway Rule:</b> <span id="drillTakeaway"></span></div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+                <button id="drillRevealBtn" onclick="app.revealDrill()" class="w-full py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg font-medium transition">
+                    Show Solution (Spacebar)
+                </button>
+                <div id="drillRatingBtns" class="grid grid-cols-3 gap-2 hidden">
+                    <button onclick="app.rateDrill('fail')" class="py-2 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-lg font-medium hover:bg-rose-200">❌ Failed</button>
+                    <button onclick="app.rateDrill('hard')" class="py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg font-medium hover:bg-amber-200">⚠️ Hard</button>
+                    <button onclick="app.rateDrill('easy')" class="py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg font-medium hover:bg-emerald-200">✅ Mastered</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        const DEFAULT_DATA = [
+            {
+                id: "1",
+                subject: "Math",
+                problem: "Evaluate $\\int x e^{2x} dx$",
+                solution: "Use Integration by Parts: $u = x, dv = e^{2x}dx \\implies du = dx, v = \\frac{1}{2}e^{2x}$. Result: $\\frac{1}{2}x e^{2x} - \\frac{1}{4}e^{2x} + C$",
+                category: "Calculation / Silly Slip",
+                reason: "Forgot to divide by 2 again during the second integration of $v\\,du$.",
+                avoidance: "Always write out $u, v, du, dv$ explicitly in a side box before combining.",
+                status: "reviewing",
+                nextReview: Date.now() - 10000,
+                interval: 2,
+                image: null,
+                createdAt: Date.now() - 86400000 * 2
+            }
+        ];
+
+        class MistakeApp {
+            constructor() {
+                this.items = JSON.parse(localStorage.getItem('mistakes_db') || JSON.stringify(DEFAULT_DATA));
+                this.geminiApiKey = localStorage.getItem('gemini_api_key') || '';
+                this.geminiModel = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+                this.currentSubject = "Math";
+                this.currentView = "table";
+                this.activeImgBase64 = null;
+                
+                this.drillQueue = [];
+                this.drillIndex = 0;
+
+                this.init();
+            }
+
+            init() {
+                this.save();
+                this.updateApiKeyBadge();
+                this.render();
+                this.setupShortcuts();
+                this.setupPasteListener();
+                if (window.lucide) lucide.createIcons();
+            }
+
+            save() {
+                localStorage.setItem('mistakes_db', JSON.stringify(this.items));
+            }
+
+            updateApiKeyBadge() {
+                const dot = document.getElementById('apiKeyDot');
+                if (this.geminiApiKey) {
+                    dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                    dot.title = "Gemini Key Configured";
+                } else {
+                    dot.className = "w-2 h-2 rounded-full bg-amber-400";
+                    dot.title = "No API Key";
+                }
+            }
+
+            openSettings() {
+                document.getElementById('geminiApiKeyInput').value = this.geminiApiKey;
+                document.getElementById('geminiModelSelect').value = this.geminiModel;
+                document.getElementById('settingsModal').classList.remove('hidden');
+            }
+
+            closeSettings() {
+                document.getElementById('settingsModal').classList.add('hidden');
+            }
+
+            saveApiKey() {
+                const key = document.getElementById('geminiApiKeyInput').value.trim();
+                const model = document.getElementById('geminiModelSelect').value || 'gemini-2.5-flash';
+                this.geminiApiKey = key;
+                this.geminiModel = model;
+                localStorage.setItem('gemini_api_key', key);
+                localStorage.setItem('gemini_model', model);
+                this.updateApiKeyBadge();
+                this.closeSettings();
+            }
+
+            setSubject(subject) {
+                this.currentSubject = subject;
+                this.render();
+            }
+
+            setView(view) {
+                this.currentView = view;
+                ['table', 'cards', 'analytics'].forEach(v => {
+                    document.getElementById(`${v}View`).classList.toggle('hidden', v !== view);
+                    const btn = document.getElementById(`viewBtn-${v}`);
+                    if (btn) {
+                        btn.className = (v === view) 
+                            ? "px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white font-bold"
+                            : "px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900";
+                    }
+                });
+                this.render();
+            }
+
+            getFilteredItems() {
+                const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+                const reasonFilter = document.getElementById('reasonFilter')?.value || 'All';
+                const statusFilter = document.getElementById('statusFilter')?.value || 'All';
+
+                return this.items.filter(item => {
+                    const matchSub = this.currentSubject === 'All' || item.subject === this.currentSubject;
+                    const matchReason = reasonFilter === 'All' || item.category === reasonFilter;
+                    const matchStatus = statusFilter === 'All' || item.status === statusFilter;
+                    const matchSearch = !search || 
+                        item.problem.toLowerCase().includes(search) || 
+                        item.solution.toLowerCase().includes(search) || 
+                        item.reason.toLowerCase().includes(search) || 
+                        item.avoidance.toLowerCase().includes(search);
+
+                    return matchSub && matchReason && matchStatus && matchSearch;
+                });
+            }
+
+            render() {
+                const filtered = this.getFilteredItems();
+                this.renderStats();
+
+                if (this.currentView === 'table') {
+                    this.renderTable(filtered);
+                } else if (this.currentView === 'cards') {
+                    this.renderCards(filtered);
+                } else if (this.currentView === 'analytics') {
+                    this.renderAnalytics();
+                }
+
+                if (window.renderMathInElement) {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                }
+                if (window.lucide) lucide.createIcons();
+            }
+
+            renderStats() {
+                const total = this.items.length;
+                const needReview = this.items.filter(i => i.nextReview <= Date.now()).length;
+                const mastered = this.items.filter(i => i.status === 'mastered').length;
+
+                document.getElementById('statTotal').innerText = total;
+                document.getElementById('statReview').innerText = needReview;
+                document.getElementById('statMastered').innerText = mastered;
+                document.getElementById('dueBadge').innerText = needReview;
+
+                const counts = {};
+                this.items.forEach(i => counts[i.category] = (counts[i.category] || 0) + 1);
+                let topReason = "-";
+                let max = 0;
+                for (const [k, v] of Object.entries(counts)) {
+                    if (v > max) { max = v; topReason = k; }
+                }
+                document.getElementById('statTopReason').innerText = topReason;
+            }
+
+            renderTable(items) {
+                const tbody = document.getElementById('tableBody');
+                const empty = document.getElementById('emptyTableState');
+
+                if (items.length === 0) {
+                    tbody.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    return;
+                }
+                empty.classList.add('hidden');
+
+                tbody.innerHTML = items.map(item => `
+                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition group">
+                        <td class="py-4 px-4 align-top border-r border-slate-100 dark:border-slate-800/60">
+                            <div class="font-medium text-slate-800 dark:text-slate-100">${this.escapeHTML(item.problem)}</div>
+                            ${item.image ? `<img src="${item.image}" class="mt-2 max-h-24 rounded border border-slate-200 dark:border-slate-700">` : ''}
+                            <div class="mt-2 flex items-center gap-1.5">
+                                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${this.getStatusBadgeClass(item.status)}">
+                                    ${item.status.toUpperCase()}
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-mono">${item.subject}</span>
+                            </div>
+                        </td>
+
+                        <td class="py-4 px-4 align-top border-r border-slate-100 dark:border-slate-800/60 bg-emerald-50/20 dark:bg-emerald-950/10">
+                            <div class="text-slate-700 dark:text-slate-300">${this.escapeHTML(item.solution)}</div>
+                        </td>
+
+                        <td class="py-4 px-4 align-top border-r border-slate-100 dark:border-slate-800/60">
+                            <span class="inline-block text-[11px] font-semibold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded mb-1.5">
+                                ${item.category}
+                            </span>
+                            <div class="text-xs text-slate-600 dark:text-slate-400">${this.escapeHTML(item.reason)}</div>
+                        </td>
+
+                        <td class="py-4 px-4 align-top border-r border-slate-100 dark:border-slate-800/60 bg-emerald-50/30 dark:bg-emerald-950/20">
+                            <div class="font-medium text-emerald-900 dark:text-emerald-300 flex items-start gap-1">
+                                <span>💡</span>
+                                <span>${this.escapeHTML(item.avoidance || 'No prevention rule added')}</span>
+                            </div>
+                        </td>
+
+                        <td class="py-4 px-3 align-top text-center">
+                            <div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100">
+                                <button onclick="app.editMistake('${item.id}')" class="p-1 text-slate-400 hover:text-emerald-600 rounded">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="app.deleteMistake('${item.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            renderCards(items) {
+                const container = document.getElementById('cardsView');
+                container.innerHTML = items.map(item => `
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                        <div>
+                            <div class="flex justify-between items-start gap-2 mb-2">
+                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${this.getStatusBadgeClass(item.status)}">${item.status}</span>
+                                <span class="text-xs text-slate-400">${item.subject}</span>
+                            </div>
+                            <h4 class="font-medium text-slate-900 dark:text-slate-100 mb-2">${this.escapeHTML(item.problem)}</h4>
+                            <div class="text-xs bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 mb-3">
+                                <b>Sol:</b> ${this.escapeHTML(item.solution)}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-rose-600 dark:text-rose-400 font-medium mb-1">⚠️ ${item.category}</div>
+                            <div class="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded">
+                                💡 ${this.escapeHTML(item.avoidance)}
+                            </div>
+                            <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                <button onclick="app.editMistake('${item.id}')" class="text-xs text-slate-400 hover:text-slate-600">Edit</button>
+                                <button onclick="app.deleteMistake('${item.id}')" class="text-xs text-rose-400 hover:text-rose-600">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderAnalytics() {
+                const reasonBars = document.getElementById('reasonBars');
+                const counts = {};
+                this.items.forEach(i => counts[i.category] = (counts[i.category] || 0) + 1);
+                const total = this.items.length || 1;
+
+                reasonBars.innerHTML = Object.entries(counts).map(([reason, cnt]) => {
+                    const pct = Math.round((cnt / total) * 100);
+                    return `
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>${reason}</span>
+                                <span>${cnt} (${pct}%)</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-700 rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const masteryContainer = document.getElementById('masteryBreakdown');
+                const statusCounts = { learning: 0, reviewing: 0, mastered: 0 };
+                this.items.forEach(i => statusCounts[i.status] = (statusCounts[i.status] || 0) + 1);
+                masteryContainer.innerHTML = `
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="bg-rose-50 dark:bg-rose-950/20 p-3 rounded-lg border border-rose-100 dark:border-rose-900">
+                            <div class="text-lg font-bold text-rose-600">${statusCounts.learning}</div>
+                            <div class="text-xs text-slate-500">Learning</div>
+                        </div>
+                        <div class="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-100 dark:border-amber-900">
+                            <div class="text-lg font-bold text-amber-600">${statusCounts.reviewing}</div>
+                            <div class="text-xs text-slate-500">Reviewing</div>
+                        </div>
+                        <div class="bg-emerald-50 dark:bg-emerald-950/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900">
+                            <div class="text-lg font-bold text-emerald-600">${statusCounts.mastered}</div>
+                            <div class="text-xs text-slate-500">Mastered</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            getStatusBadgeClass(status) {
+                switch(status) {
+                    case 'mastered': return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300';
+                    case 'reviewing': return 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300';
+                    default: return 'bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300';
+                }
+            }
+
+            openModal(editId = null) {
+                const modal = document.getElementById('mistakeModal');
+                const form = document.getElementById('mistakeForm');
+                form.reset();
+                this.clearImage();
+                
+                if (editId) {
+                    const item = this.items.find(i => i.id === editId);
+                    if (!item) return;
+                    document.getElementById('mistakeId').value = item.id;
+                    document.getElementById('inputSubject').value = item.subject;
+                    document.getElementById('inputReason').value = item.category;
+                    document.getElementById('inputProblem').value = item.problem;
+                    document.getElementById('inputSolution').value = item.solution;
+                    document.getElementById('inputSpecificReason').value = item.reason;
+                    document.getElementById('inputAvoidance').value = item.avoidance;
+                    if (item.image) {
+                        this.setImageData(item.image);
+                    }
+                    document.getElementById('modalTitle').innerText = "Edit Mistake";
+                } else {
+                    document.getElementById('mistakeId').value = '';
+                    document.getElementById('modalTitle').innerText = "Record Mistake";
+                }
+                modal.classList.remove('hidden');
+            }
+
+            closeModal() {
+                document.getElementById('mistakeModal').classList.add('hidden');
+            }
+
+            saveMistake(e) {
+                e.preventDefault();
+                const id = document.getElementById('mistakeId').value;
+                const subject = document.getElementById('inputSubject').value;
+                const category = document.getElementById('inputReason').value;
+                const problem = document.getElementById('inputProblem').value;
+                const solution = document.getElementById('inputSolution').value;
+                const reason = document.getElementById('inputSpecificReason').value;
+                const avoidance = document.getElementById('inputAvoidance').value;
+
+                if (id) {
+                    const item = this.items.find(i => i.id === id);
+                    if (item) {
+                        Object.assign(item, { subject, category, problem, solution, reason, avoidance, image: this.activeImgBase64 });
+                    }
+                } else {
+                    this.items.unshift({
+                        id: Date.now().toString(),
+                        subject,
+                        category,
+                        problem,
+                        solution,
+                        reason,
+                        avoidance,
+                        image: this.activeImgBase64,
+                        status: 'learning',
+                        interval: 1,
+                        nextReview: Date.now(),
+                        createdAt: Date.now()
+                    });
+                }
+
+                this.save();
+                this.closeModal();
+                this.render();
+            }
+
+            deleteMistake(id) {
+                if (confirm('Delete this mistake log?')) {
+                    this.items = this.items.filter(i => i.id !== id);
+                    this.save();
+                    this.render();
+                }
+            }
+
+            editMistake(id) {
+                this.openModal(id);
+            }
+
+            setImageData(base64Uri) {
+                this.activeImgBase64 = base64Uri;
+                const preview = document.getElementById('imagePreview');
+                const container = document.getElementById('imagePreviewContainer');
+                const removeBtn = document.getElementById('removeImgBtn');
+
+                preview.src = base64Uri;
+                container.classList.remove('hidden');
+                removeBtn.classList.remove('hidden');
+            }
+
+            handleImageUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    this.setImageData(event.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            setupPasteListener() {
+                window.addEventListener('paste', (e) => {
+                    if (document.getElementById('mistakeModal').classList.contains('hidden')) return;
+                    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                    for (let item of items) {
+                        if (item.type.indexOf('image') !== -1) {
+                            const blob = item.getAsFile();
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                this.setImageData(event.target.result);
+                            };
+                            reader.readAsDataURL(blob);
+                            break;
+                        }
+                    }
+                });
+            }
+
+            clearImage() {
+                this.activeImgBase64 = null;
+                document.getElementById('inputImage').value = '';
+                document.getElementById('imagePreviewContainer').classList.add('hidden');
+                document.getElementById('removeImgBtn').classList.add('hidden');
+            }
+
+            /* --- Gemini Flash AI Engine (Multi-Part & Thinking-Safe) --- */
+            async analyzeWithAI() {
+                if (!this.geminiApiKey) {
+                    alert('Please click "Gemini API" in the top bar to set your API Key first.');
+                    this.openSettings();
+                    return;
+                }
+
+                const currentProblemText = document.getElementById('inputProblem').value.trim();
+                if (!this.activeImgBase64 && !currentProblemText) {
+                    alert('Please upload/paste an image or enter some problem notes first.');
+                    return;
+                }
+
+                const loadingOverlay = document.getElementById('aiLoadingOverlay');
+                const statusText = document.getElementById('aiStatusText');
+                const scanBtn = document.getElementById('aiScanBtn');
+                
+                loadingOverlay.classList.remove('hidden');
+                scanBtn.setAttribute('disabled', 'true');
+                statusText.innerText = "Analyzing with Gemini Flash...";
+
+                try {
+                    const prompt = `You are a world-class academic tutor and diagnostic exam analyzer. 
+Examine this problem and identify the student's mistake.
+
+Return ONLY a raw, valid JSON object without markdown fences, with these exact keys:
+{
+  "subject": "Math", 
+  "category": "Conceptual Error | Calculation / Silly Slip | Misread Question | Formula Forgotten | Time Pressure",
+  "problem": "Exact problem transcribed with LaTeX math formatting using $...$",
+  "solution": "Correct step-by-step mathematical derivation using LaTeX notation",
+  "reason": "Clear diagnosis of why the error was made",
+  "avoidance": "A 1-sentence actionable rule/mental-check to avoid this mistake in the future"
+}`;
+
+                    const parts = [{ text: prompt }];
+
+                    if (this.activeImgBase64) {
+                        const base64Data = this.activeImgBase64.split(',')[1];
+                        const mimeType = this.activeImgBase64.split(';')[0].split(':')[1] || 'image/jpeg';
+                        parts.push({
+                            inline_data: { mime_type: mimeType, data: base64Data }
+                        });
+                    } else {
+                        parts.push({
+                            text: `Student's Problem Notes: ${currentProblemText}`
+                        });
+                    }
+
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${this.geminiApiKey}`;
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: parts }],
+                            generationConfig: {
+                                temperature: 0.1
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    // Safety / Block check
+                    if (result.promptFeedback?.blockReason) {
+                        throw new Error(`Request was blocked: ${result.promptFeedback.blockReason}`);
+                    }
+
+                    const rawParts = result.candidates?.[0]?.content?.parts || [];
+                    
+                    // Extract all text parts (handles multi-part reasoning tokens)
+                    let fullText = rawParts.map(p => p.text || '').filter(Boolean).join('\n').trim();
+
+                    if (!fullText) {
+                        const finishReason = result.candidates?.[0]?.finishReason;
+                        throw new Error(`No text generated by model (Finish reason: ${finishReason || 'UNKNOWN'})`);
+                    }
+
+                    // Robust JSON extraction (handles ```json fences or raw text)
+                    let data = null;
+                    try {
+                        data = JSON.parse(fullText);
+                    } catch (e) {
+                        const jsonMatch = fullText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || fullText.match(/(\{[\s\S]*\})/);
+                        if (jsonMatch && jsonMatch[1]) {
+                            data = JSON.parse(jsonMatch[1]);
+                        } else {
+                            throw new Error("Could not parse JSON structure from response.");
+                        }
+                    }
+
+                    // Auto-fill input fields
+                    if (data.subject) document.getElementById('inputSubject').value = data.subject;
+                    if (data.category) document.getElementById('inputReason').value = data.category;
+                    if (data.problem) document.getElementById('inputProblem').value = data.problem;
+                    if (data.solution) document.getElementById('inputSolution').value = data.solution;
+                    if (data.reason) document.getElementById('inputSpecificReason').value = data.reason;
+                    if (data.avoidance) document.getElementById('inputAvoidance').value = data.avoidance;
+
+                } catch (error) {
+                    console.error('Gemini Analysis Failed:', error);
+                    alert(`Gemini AI Error: ${error.message}\n\nTip: You can switch models in the "Gemini API" settings menu.`);
+                } finally {
+                    loadingOverlay.classList.add('hidden');
+                    scanBtn.removeAttribute('disabled');
+                }
+            }
+
+            /* --- Spaced Repetition Drill Engine --- */
+            startReviewSession() {
+                const due = this.items.filter(i => i.nextReview <= Date.now());
+                this.drillQueue = due.length ? due : [...this.items];
+                if (this.drillQueue.length === 0) {
+                    alert('No items available to drill. Add some mistakes first!');
+                    return;
+                }
+                this.drillIndex = 0;
+                document.getElementById('drillModal').classList.remove('hidden');
+                this.loadDrillCard();
+            }
+
+            loadDrillCard() {
+                const item = this.drillQueue[this.drillIndex];
+                document.getElementById('drillSubjectBadge').innerText = item.subject + " • " + item.category;
+                document.getElementById('drillCounter').innerText = `${this.drillIndex + 1} / ${this.drillQueue.length}`;
+                document.getElementById('drillProblem').innerHTML = this.escapeHTML(item.problem);
+                
+                const imgBox = document.getElementById('drillImageContainer');
+                imgBox.innerHTML = item.image ? `<img src="${item.image}" class="mt-2 max-h-40 rounded mx-auto border">` : '';
+
+                document.getElementById('drillSolution').innerHTML = this.escapeHTML(item.solution);
+                document.getElementById('drillTakeaway').innerText = item.avoidance || "No takeaway recorded";
+                
+                document.getElementById('drillSolutionSection').classList.add('hidden');
+                document.getElementById('drillRevealBtn').classList.remove('hidden');
+                document.getElementById('drillRatingBtns').classList.add('hidden');
+
+                if (window.renderMathInElement) {
+                    renderMathInElement(document.getElementById('drillModal'), {
+                        delimiters: [{left: '$', right: '$', display: false}]
+                    });
+                }
+            }
+
+            revealDrill() {
+                document.getElementById('drillSolutionSection').classList.remove('hidden');
+                document.getElementById('drillRevealBtn').classList.add('hidden');
+                document.getElementById('drillRatingBtns').classList.remove('hidden');
+                if (window.renderMathInElement) {
+                    renderMathInElement(document.getElementById('drillSolutionSection'), {
+                        delimiters: [{left: '$', right: '$', display: false}]
+                    });
+                }
+            }
+
+            rateDrill(rating) {
+                const item = this.drillQueue[this.drillIndex];
+                if (rating === 'easy') {
+                    item.status = 'mastered';
+                    item.interval = (item.interval || 1) * 3;
+                    item.nextReview = Date.now() + item.interval * 86400000;
+                } else if (rating === 'hard') {
+                    item.status = 'reviewing';
+                    item.interval = Math.max(1, Math.floor((item.interval || 1) * 1.5));
+                    item.nextReview = Date.now() + item.interval * 86400000;
+                } else {
+                    item.status = 'learning';
+                    item.interval = 1;
+                    item.nextReview = Date.now() + 86400000;
+                }
+
+                this.save();
+                this.drillIndex++;
+                if (this.drillIndex < this.drillQueue.length) {
+                    this.loadDrillCard();
+                } else {
+                    this.closeDrill();
+                    alert('🎉 Drill Session Completed!');
+                    this.render();
+                }
+            }
+
+            closeDrill() {
+                document.getElementById('drillModal').classList.add('hidden');
+                this.render();
+            }
+
+            exportJSON() {
+                const blob = new Blob([JSON.stringify(this.items, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mistake_tracker_backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+            }
+
+            importJSON(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (Array.isArray(imported)) {
+                            this.items = imported;
+                            this.save();
+                            this.render();
+                            alert('Data imported successfully!');
+                        }
+                    } catch(err) {
+                        alert('Invalid JSON file.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            toggleTheme() {
+                document.documentElement.classList.toggle('dark');
+            }
+
+            setupShortcuts() {
+                window.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                        e.preventDefault();
+                        document.getElementById('searchInput').focus();
+                    }
+                    if (e.key === ' ' && !document.getElementById('drillModal').classList.contains('hidden')) {
+                        if (!document.getElementById('drillRevealBtn').classList.contains('hidden')) {
+                            e.preventDefault();
+                            this.revealDrill();
+                        }
+                    }
+                });
+            }
+
+            escapeHTML(str) {
+                if (!str) return '';
+                return str.replace(/[&<>'"]/g, tag => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+                }[tag] || tag));
+            }
+        }
+
+        const app = new MistakeApp();
+    </script>
+</body>
+</html>
