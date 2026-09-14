@@ -18,6 +18,17 @@ Not because there's any actual physics under the hood (there isn't — just clea
 This app is the observer. Measurement, in this case, is just brutally honest bookkeeping.
 
 ---
+<p align="center"> 
+  <table> 
+    <tr> 
+      <td><img src="https://github.com/user-attachments/assets/b0180d8c-0caf-48ec-aec0-6c03fd4a51c9" width="270"/></td> 
+      <td><img src="https://github.com/user-attachments/assets/98898ca3-1aec-49f4-911b-b27cc98cf11f" width="270"/></td> 
+      <td><img src="https://github.com/user-attachments/assets/e8c86f74-c5dc-4a59-bf82-665de41b9ad8" width="270"/></td> 
+      <td><img src="https://github.com/user-attachments/assets/04f392e7-ca67-41c5-a7b5-bbee74bce521" width="270"/></td> 
+    </tr> 
+  </table> 
+</p>
+
 
 ## What it actually does
 
