@@ -1,124 +1,80 @@
 
-# ⚡ Quantum Mistake Tracker
+# 🔬 Quantum Mistake Tracker
 
-<p align="center">
-  <b>Turn your wrong answers into unfair advantages.</b><br>
-  A lightweight, zero-backend, AI-powered diagnostic mistake journal for STEM students, competitive programmers, and high-stakes test takers.
-</p>
+**Every wrong answer is in a superposition — until you review it, you don't actually know why you got it wrong.**
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Active%20%26%20Open%20Source-10b981?style=for-the-badge" alt="Status">
-  <img src="https://img.shields.io/badge/Architecture-Zero--Build%20Single%20File-0ea5e9?style=for-the-badge" alt="Architecture">
-  <img src="https://img.shields.io/badge/Intelligence-Gemini%202.5%20%2F%203.7%20Flash-f59e0b?style=for-the-badge" alt="Gemini">
-  <img src="https://img.shields.io/badge/License-MIT-6366f1?style=for-the-badge" alt="License">
-</p>
+Quantum Mistake Tracker collapses that uncertainty. Log the problem, log the slip, and watch your blind spots go from *unknown unknowns* to *known, and handled.*
+<img width="1908" height="1032" alt="Screenshot 2026-09-14 084030" src="https://github.com/user-attachments/assets/b0180d8c-0caf-48ec-aec0-6c03fd4a51c9" />
+<img width="1892" height="1030" alt="Screenshot 2026-09-14 084025" src="https://github.com/user-attachments/assets/98898ca3-1aec-49f4-911b-b27cc98cf11f" />
+<img width="1914" height="1194" alt="Screenshot 2026-09-14 084800" src="https://github.com/user-attachments/assets/e8c86f74-c5dc-4a59-bf82-665de41b9ad8" />
+<img width="1905" height="1029" alt="Screenshot 2026-09-14 084231" src="https://github.com/user-attachments/assets/04f392e7-ca67-41c5-a7b5-bbee74bce521" />
+<img width="1891" height="1028" alt="Screenshot 2026-09-14 084054" src="https://github.com/user-attachments/assets/dc69f6a1-ee0b-4520-b571-c3fde4fbdc84" />
 
 ---
 
-## 💡 Why Quantum Mistake Tracker?
+## Why "Quantum"?
 
-Top performers in math competitions, coding interviews (LeetCode/Codeforces), and standardized exams (SAT, JEE, GRE, MCAT) share one habit: **they obsess over their errors.**
+Not because there's any actual physics under the hood (there isn't — just clean HTML, Tailwind, and localStorage). It's quantum because your mistakes exist in two states at once:
 
-Traditional flashcard systems only test recall. **Quantum Mistake Tracker** diagnoses *why* you failed:
+- **Unobserved** — the silly slip you'll swear you'll "never make again," right up until you make it again.
+- **Observed** — logged, tagged, and scheduled for review, at which point it stops haunting you and starts teaching you.
 
-[ Problem Occurs ] │ ▼ [ Snapshot / Paste ] ──► [ Gemini Vision Analysis ] │
-┌────────────────────────┴────────────────────────┐ ▼ ▼ [ Root Cause
-Diagnosed ] [ LaTeX Formatted Solution ] (e.g., Calculation Slip, Concept Gap)
-(Step-by-step resolution) │ │
-└────────────────────────┬────────────────────────┘
-│ ▼ [ Spaced Repetition Drill ] (Automated interval mastery)
-
+This app is the observer. Measurement, in this case, is just brutally honest bookkeeping.
 
 ---
 
-## ✨ Features at a Glance
+## What it actually does
 
-| Feature | Description |
-| :--- | :--- |
-| 🗂️ **Diagnostic Spreadsheet** | High-density log separating the question, correct derivation, root mistake trigger, and prevention rule. |
-| 👁️ **Multi-Modal AI Vision** | Paste a screenshot (`Ctrl+V`) or snap a photo of handwritten work. Gemini extracts the problem, converts math to $\LaTeX$, and auto-fills the entry. |
-| 📐 **Native $\LaTeX$ Engine** | Real-time formula rendering powered by KaTeX ($...$ and $$...$$). |
-| 🔁 **Active Recall Drills** | Built-in flashcard drill system with spacebar reveals and spaced repetition status tracking (`Learning` $\to$ `Reviewing` $\to$ `Mastered`). |
-| 📊 **Error Analytics** | Root-cause distribution charts to highlight recurring systematic weaknesses. |
-| 🔒 **Local-First & Private** | Zero telemetry. Your notes, images, and API keys remain stored inside your browser's `localStorage`. |
-| 📦 **Single-File Portability** | Runs straight out of `index.html`. No `npm install`, no Node.js, no compilation step. |
+A single-file, no-backend study companion for tracking *why* you get things wrong — not just *that* you did.
+
+- **📋 Log mistakes like a lab notebook** — the incorrect attempt, the correct solution, the reason behind the error (conceptual gap, careless slip, misread question, forgotten formula, time pressure), and a one-line fix for next time.
+- **🧠 Three ways to look at your errors** — a dense spreadsheet view for scanning, a card view for browsing, and a diagnostics view that charts your most common failure modes.
+- **⚡ Spaced-repetition drills** — mistakes resurface on a schedule tuned to how well you know them. Fail one, it comes back tomorrow. Master one, it fades out gracefully.
+- **✨ Optional AI eyes** — plug in a Gemini API key and hand it a screenshot of your mistake; it drafts the breakdown for you (you stay the editor, not the typist).
+- **📦 Own your data** — everything lives in your browser's localStorage, with one-click JSON export/import for backups or moving between machines.
+- **🌗 Light & dark mode**, because debugging your own brain shouldn't strain your eyes doing it.
 
 ---
 
-## 🚀 Quickstart
+## Quick start
 
-You don't need a development environment or server setup to run this.
+No build step. No install. No server. This is a single HTML file — the lowest-friction study tool you'll open all week.
 
-### Method 1: Instant Local Run
 ```bash
-# 1. Clone the repository
-git clone https://github.com/yourusername/quantum-mistake-tracker.git
-
-# 2. Open in your browser
+git clone https://github.com/panthomg/quantum-mistake-tracker.git
 cd quantum-mistake-tracker
-open index.html        # macOS
-xdg-open index.html    # Linux
-start index.html       # Windows
+open index.html   # or just double-click it
+```
 
-Method 2: Standalone Download
+That's it. It runs entirely in your browser.
 
-1.  Download index.html directly to your machine.
-2.  Double-click the file to open it in Chrome, Safari, Firefox, Edge, or Brave.
+Want the AI auto-analysis feature? Grab a free key from [Google AI Studio](https://aistudio.google.com/), click **Gemini API** in the top bar, and paste it in. Nothing leaves your browser except the request to Gemini itself.
 
-🔑 Activating AI Diagnostic Features
+---
 
-The app is fully functional as a manual tracker offline. To enable automated
-handwriting extraction and error analysis:
+## The philosophy, briefly
 
-1.  Grab a free API key from Google AI Studio.
-2.  Click Gemini API in the top navigation bar.
-3.  Paste your key and select your preferred model (gemini-2.5-flash
-    recommended).
-4.  Hit Save Key (saved locally to your browser).
+Most of us don't repeat mistakes because we're careless — we repeat them because we never *categorized* them. "I made a silly error" and "I misunderstood the concept" call for completely different fixes, but they feel identical in the moment.
 
-⌨️ Productivity Hotkeys
+This tool forces the distinction. Once your mistakes are sorted by *cause* instead of just *occurrence*, patterns you were blind to start showing up in the diagnostics tab — and patterns you can see are patterns you can fix.
 
-| Shortcut               | Context       | Action                                            |
-| :--------------------- | :------------ | :------------------------------------------------ |
-| `Ctrl + K` / `Cmd + K` | Global        | Focus search filter bar                           |
-| `Ctrl + V` / `Cmd + V` | Add Modal     | Paste screenshot directly from clipboard          |
-| `Spacebar`             | Drill Session | Reveal step-by-step answer and avoidance takeaway |
+---
 
-🏗️ Under the Hood
+## Contributing
 
-Designed to be lightweight, auditable, and hackable:
+Found a bug? Have an idea? Blind spots welcome pull requests too.
 
-quantum-mistake-tracker/
-├── index.html         # Complete application (UI, Tailwind styles, SRS engine, Gemini client)
-├── README.md          # Project documentation
-└── LICENSE            # MIT License
+1. Fork it
+2. Branch it (`git checkout -b feature/your-idea`)
+3. Commit it
+4. Open a PR
 
-  - Core Runtime: Vanilla JavaScript (ES6+ Class Architecture).
-  - Styling: Modern utility layout via Tailwind CSS.
-  - Math Rendering: KaTeX 0.16.8 (via CDN).
-  - Icons: Lucide Icons.
-  - Storage Layer: LocalStorage API with JSON backup/restore.
-  - AI Provider: Google Gemini Flash REST endpoints (Multi-part reasoning safe).
+---
 
-🗺️ Roadmap & Ideas
+## License
 
-- [ ] Export directly to Anki deck packages (.apkg)
-- [ ] Tagging system for granular sub-topics (#calculus, #graph-theory)
-- [ ] Offline local OCR fallback option
-- [ ] Custom review interval schedules (SuperMemo / SM-2 algorithm)
+MIT — do what you want with it, just don't blame the tracker for mistakes it hasn't observed yet.
 
-🤝 Contributing
+---
 
-Contributions of any kind are welcome! Whether it's adding features, improving
-documentation, or styling tweaks:
-
-1.  Fork the project.
-2.  Create your branch (git checkout -b feature/cool-enhancement).
-3.  Commit your changes (git commit -m 'Add cool enhancement').
-4.  Push to the branch (git push origin feature/cool-enhancement).
-5.  Open a Pull Request.
-
-📄 License
-
-This project is completely free and open source under the MIT License.
-
+<p align="center"><i>Uncertainty is the default state. Review is how you resolve it.</i></p>
