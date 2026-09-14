@@ -10,7 +10,7 @@ Quantum Mistake Tracker collapses that uncertainty. Log the problem, log the sli
 
 ## Why "Quantum"?
 
-Not because there's any actual physics under the hood (there isn't — just clean HTML, Tailwind, and localStorage). It's quantum because your mistakes exist in two states at once:
+It's quantum because your mistakes exist in two states at once:
 
 - **Unobserved** — the silly slip you'll swear you'll "never make again," right up until you make it again.
 - **Observed** — logged, tagged, and scheduled for review, at which point it stops haunting you and starts teaching you.
