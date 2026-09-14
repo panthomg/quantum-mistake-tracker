@@ -69,7 +69,7 @@ This tool forces the distinction. Once your mistakes are sorted by *cause* inste
 
 ## Contributing
 
-Found a bug? Have an idea? Blind spots welcome pull requests too.
+Found a bug? Have an idea? you are welcome pull requests too.
 
 1. Fork it
 2. Branch it (`git checkout -b feature/your-idea`)
