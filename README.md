@@ -4,11 +4,7 @@
 **Every wrong answer is in a superposition — until you review it, you don't actually know why you got it wrong.**
 
 Quantum Mistake Tracker collapses that uncertainty. Log the problem, log the slip, and watch your blind spots go from *unknown unknowns* to *known, and handled.*
-<img width="1908" height="1032" alt="Screenshot 2026-09-14 084030" src="https://github.com/user-attachments/assets/b0180d8c-0caf-48ec-aec0-6c03fd4a51c9" />
-<img width="1892" height="1030" alt="Screenshot 2026-09-14 084025" src="https://github.com/user-attachments/assets/98898ca3-1aec-49f4-911b-b27cc98cf11f" />
-<img width="1914" height="1194" alt="Screenshot 2026-09-14 084800" src="https://github.com/user-attachments/assets/e8c86f74-c5dc-4a59-bf82-665de41b9ad8" />
-<img width="1905" height="1029" alt="Screenshot 2026-09-14 084231" src="https://github.com/user-attachments/assets/04f392e7-ca67-41c5-a7b5-bbee74bce521" />
-<img width="1891" height="1028" alt="Screenshot 2026-09-14 084054" src="https://github.com/user-attachments/assets/dc69f6a1-ee0b-4520-b571-c3fde4fbdc84" />
+
 
 ---
 
