@@ -32,7 +32,7 @@ This app is the observer. Measurement, in this case, is just brutally honest boo
 
 ## What it actually does
 
-A single-file, no-backend study companion for tracking *why* you get things wrong — not just *that* you did.
+A study companion app for tracking *why* you get things wrong — not just *that* you did.
 
 - **📋 Log mistakes like a lab notebook** — the incorrect attempt, the correct solution, the reason behind the error (conceptual gap, careless slip, misread question, forgotten formula, time pressure), and a one-line fix for next time.
 - **🧠 Three ways to look at your errors** — a dense spreadsheet view for scanning, a card view for browsing, and a diagnostics view that charts your most common failure modes.
