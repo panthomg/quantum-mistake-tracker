@@ -1,3 +1,4 @@
+<img width="2323" height="782" alt="Untitled Document 2 (1) (2) (4)" src="https://github.com/user-attachments/assets/7230b737-b45f-4766-9fac-289d6c1767ca" />
 
 # 🔬 Quantum Mistake Tracker
 
