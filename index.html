@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Mistake Tracker — AI Study Engine</title>
+    <title>Quantum Mistake Tracker — AI Math Engine</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -30,10 +30,10 @@
         }
     </script>
     
-    <!-- KaTeX for LaTeX Math ($...$ and $$...$$) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <!-- KaTeX CDN (High Priority Synced Load) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -42,6 +42,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.3); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.5); }
+        .katex-display { margin: 0.5em 0 !important; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
@@ -133,7 +134,7 @@
         <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs mb-6 flex flex-wrap items-center justify-between gap-3">
             <div class="relative flex-1 min-w-[240px]">
                 <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="searchInput" oninput="app.render()" placeholder="Search problems, reasons, takeaways, formulas..."
+                <input type="text" id="searchInput" oninput="app.render()" placeholder="Search equations, reasons, takeaways..."
                        class="w-full pl-9 pr-4 py-1.5 text-xs sm:text-sm rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-700 outline-none">
             </div>
             <div class="flex items-center gap-2 flex-wrap text-xs">
@@ -217,9 +218,6 @@
                 </h3>
                 <button onclick="app.closeSettings()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                Enter your Google AI Studio API key. Works with <b>Gemini 2.5 Flash, Gemini 3.7 Flash, and 2.0 Flash</b>.
-            </p>
             <div class="space-y-3 text-xs sm:text-sm">
                 <div>
                     <label class="block font-semibold mb-1">Gemini API Key</label>
@@ -228,8 +226,9 @@
                 <div>
                     <label class="block font-semibold mb-1">Model Selection</label>
                     <select id="geminiModelSelect" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none font-mono focus:ring-2 focus:ring-emerald-600">
-                        <option value="gemini-2.5-flash">gemini-2.5-flash (Recommended)</option>
-                        <option value="gemini-3.7-flash">gemini-3.7-flash</option>
+                        <option value="gemini-3.7-flash" selected>gemini-3.7-flash (Default)</option>
+                        <option value="gemini-3.6-flash">gemini-3.6-flash</option>
+                        <option value="gemini-3.8-flash">gemini-3.8-flash</option>
                         <option value="gemini-2.0-flash">gemini-2.0-flash</option>
                         <option value="gemini-1.5-flash">gemini-1.5-flash</option>
                     </select>
@@ -242,8 +241,18 @@
         </div>
     </div>
 
+    <!-- Modal: Dedicated Image Preview Lightbox -->
+    <div id="imageLightboxModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden" onclick="app.closeLightbox()">
+        <div class="relative max-w-5xl max-h-[92vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
+            <button onclick="app.closeLightbox()" class="absolute -top-10 right-0 bg-white/10 hover:bg-white/20 p-1.5 rounded-full text-white transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <img id="lightboxImage" src="" class="max-h-[85vh] max-w-full rounded-xl shadow-2xl object-contain border border-slate-800 bg-slate-900/50">
+        </div>
+    </div>
+
     <!-- Modal: Add / Edit Mistake -->
-    <div id="mistakeModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden">
+    <div id="mistakeModal" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden">
             
             <div class="px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
@@ -270,14 +279,13 @@
                             <span id="aiScanBtnText">Auto-Detect & Fill</span>
                         </button>
                     </div>
-                    <p class="text-[11px] text-slate-500">Upload, paste (<kbd class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px]">Ctrl+V</kbd>) an image, or type notes below, then click Auto-Detect.</p>
                     
                     <div class="flex items-center gap-3 pt-1">
                         <input type="file" id="inputImage" accept="image/*" onchange="app.handleImageUpload(event)" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-800 file:text-white hover:file:bg-emerald-900 cursor-pointer">
                         <button type="button" id="removeImgBtn" onclick="app.clearImage()" class="text-xs text-rose-500 hidden hover:underline">Remove</button>
                     </div>
-                    <div id="imagePreviewContainer" class="hidden relative mt-2">
-                        <img id="imagePreview" class="max-h-36 rounded-lg border border-slate-200 dark:border-slate-700 object-contain bg-black/5">
+                    <div id="imagePreviewContainer" class="hidden relative mt-2 group">
+                        <img id="imagePreview" class="max-h-36 rounded-lg border border-slate-200 dark:border-slate-700 object-contain bg-black/5 cursor-pointer" onclick="app.openLightbox(this.src)">
                         <div id="aiLoadingOverlay" class="absolute inset-0 bg-slate-900/80 backdrop-blur-xs rounded-lg flex flex-col items-center justify-center text-white hidden">
                             <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-emerald-400 mb-2"></i>
                             <span class="text-xs font-semibold text-emerald-200" id="aiStatusText">Analyzing with Gemini...</span>
@@ -310,27 +318,27 @@
 
                 <div>
                     <label class="block font-semibold mb-1">
-                        Incorrect Problem <span class="text-slate-400 font-normal">(LaTeX $...$ supported)</span>
+                        Incorrect Problem <span class="text-slate-400 font-normal">(Use $x^2$ or $\frac{a}{b}$)</span>
                     </label>
-                    <textarea id="inputProblem" rows="3" required placeholder="State the question or what went wrong..."
+                    <textarea id="inputProblem" rows="3" required placeholder="State the question..."
                               class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none font-sans focus:ring-2 focus:ring-emerald-700"></textarea>
                 </div>
 
                 <div>
                     <label class="block font-semibold mb-1">Correct Answer & Full Solution</label>
-                    <textarea id="inputSolution" rows="3" required placeholder="Step-by-step correct derivation or answer..."
+                    <textarea id="inputSolution" rows="3" required placeholder="Step-by-step derivation..."
                               class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-700"></textarea>
                 </div>
 
                 <div>
-                    <label class="block font-semibold mb-1">Why Did You Make This Mistake? (Root trigger)</label>
-                    <textarea id="inputSpecificReason" rows="2" placeholder="e.g. Forgot to flip the inequality sign when dividing by negative"
+                    <label class="block font-semibold mb-1">Why Did You Make This Mistake?</label>
+                    <textarea id="inputSpecificReason" rows="2" placeholder="e.g. Forgot the chain rule derivative"
                               class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none"></textarea>
                 </div>
 
                 <div>
                     <label class="block font-semibold mb-1 text-emerald-800 dark:text-emerald-400">Rule / Strategy to Avoid in Future</label>
-                    <input type="text" id="inputAvoidance" placeholder="e.g. Always circle negative multipliers before dividing"
+                    <input type="text" id="inputAvoidance" placeholder="e.g. Circle inner composite functions"
                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-emerald-700">
                 </div>
 
@@ -343,7 +351,7 @@
     </div>
 
     <!-- Drill Modal -->
-    <div id="drillModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div id="drillModal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-xl rounded-2xl shadow-2xl p-6 flex flex-col min-h-[420px] max-h-[90vh]">
             <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
                 <span class="text-xs font-semibold px-2.5 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full" id="drillSubjectBadge">Math</span>
@@ -382,16 +390,30 @@
             {
                 id: "1",
                 subject: "Math",
-                problem: "Evaluate $\\int x e^{2x} dx$",
-                solution: "Use Integration by Parts: $u = x, dv = e^{2x}dx \\implies du = dx, v = \\frac{1}{2}e^{2x}$. Result: $\\frac{1}{2}x e^{2x} - \\frac{1}{4}e^{2x} + C$",
+                problem: "Evaluate the indefinite integral: $\\int x e^{2x} \\, dx$",
+                solution: "Use Integration by Parts: Let $u = x \\implies du = dx$ and $dv = e^{2x}dx \\implies v = \\frac{1}{2}e^{2x}$.\n$$\\int x e^{2x} dx = \\frac{1}{2}x e^{2x} - \\int \\frac{1}{2}e^{2x} dx = \\frac{1}{2}x e^{2x} - \\frac{1}{4}e^{2x} + C$$",
                 category: "Calculation / Silly Slip",
-                reason: "Forgot to divide by 2 again during the second integration of $v\\,du$.",
+                reason: "Forgot to divide by 2 again when integrating $\\frac{1}{2}e^{2x}$.",
                 avoidance: "Always write out $u, v, du, dv$ explicitly in a side box before combining.",
                 status: "reviewing",
                 nextReview: Date.now() - 10000,
                 interval: 2,
                 image: null,
                 createdAt: Date.now() - 86400000 * 2
+            },
+            {
+                id: "2",
+                subject: "Math",
+                problem: "Solve for $x$: $\\log_2(x) + \\log_2(x-2) = 3$",
+                solution: "Combine logarithms:\n$$\\log_2(x(x-2)) = 3 \\implies x(x-2) = 2^3 = 8$$\n$$x^2 - 2x - 8 = 0 \\implies (x-4)(x+2) = 0$$\nSince domain constraints require $x > 2$, reject $x = -2$. Final answer: $x = 4$.",
+                category: "Conceptual Error",
+                reason: "Forgot to check logarithm domain restrictions and kept negative root.",
+                avoidance: "Write down the domain constraint $x > 0$ as the very first step.",
+                status: "learning",
+                interval: 1,
+                nextReview: Date.now() - 5000,
+                image: null,
+                createdAt: Date.now() - 86400000
             }
         ];
 
@@ -399,7 +421,7 @@
             constructor() {
                 this.items = JSON.parse(localStorage.getItem('mistakes_db') || JSON.stringify(DEFAULT_DATA));
                 this.geminiApiKey = localStorage.getItem('gemini_api_key') || '';
-                this.geminiModel = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+                this.geminiModel = localStorage.getItem('gemini_model') || 'gemini-3.7-flash';
                 this.currentSubject = "Math";
                 this.currentView = "table";
                 this.activeImgBase64 = null;
@@ -416,11 +438,37 @@
                 this.render();
                 this.setupShortcuts();
                 this.setupPasteListener();
-                if (window.lucide) lucide.createIcons();
             }
 
             save() {
                 localStorage.setItem('mistakes_db', JSON.stringify(this.items));
+            }
+
+            /* Dedicated LaTeX Parser: parses $...$ and $$...$$ directly through KaTeX safely */
+            renderMathText(text) {
+                if (!text) return '';
+                if (!window.katex) return this.escapeHTML(text).replace(/\n/g, '<br>');
+
+                // First handle $$...$$ block math
+                let formatted = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, math) => {
+                    try {
+                        return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
+                    } catch (e) {
+                        return `$$${math}$$`;
+                    }
+                });
+
+                // Next handle $...$ inline math
+                formatted = formatted.replace(/\$([^\$\n]+?)\$/g, (_, math) => {
+                    try {
+                        return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+                    } catch (e) {
+                        return `$${math}$`;
+                    }
+                });
+
+                // Convert remaining line breaks outside math blocks
+                return formatted.replace(/\n/g, '<br>');
             }
 
             updateApiKeyBadge() {
@@ -446,13 +494,25 @@
 
             saveApiKey() {
                 const key = document.getElementById('geminiApiKeyInput').value.trim();
-                const model = document.getElementById('geminiModelSelect').value || 'gemini-2.5-flash';
+                const model = document.getElementById('geminiModelSelect').value || 'gemini-3.7-flash';
                 this.geminiApiKey = key;
                 this.geminiModel = model;
                 localStorage.setItem('gemini_api_key', key);
                 localStorage.setItem('gemini_model', model);
                 this.updateApiKeyBadge();
                 this.closeSettings();
+            }
+
+            openLightbox(src) {
+                if (!src) return;
+                const lightbox = document.getElementById('imageLightboxModal');
+                const img = document.getElementById('lightboxImage');
+                img.src = src;
+                lightbox.classList.remove('hidden');
+            }
+
+            closeLightbox() {
+                document.getElementById('imageLightboxModal').classList.add('hidden');
             }
 
             setSubject(subject) {
@@ -505,15 +565,6 @@
                     this.renderAnalytics();
                 }
 
-                if (window.renderMathInElement) {
-                    renderMathInElement(document.body, {
-                        delimiters: [
-                            {left: '$$', right: '$$', display: true},
-                            {left: '$', right: '$', display: false}
-                        ],
-                        throwOnError: false
-                    });
-                }
                 if (window.lucide) lucide.createIcons();
             }
 
@@ -551,8 +602,12 @@
                 tbody.innerHTML = items.map(item => `
                     <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition group">
                         <td class="py-4 px-4 align-top border-r border-slate-100 dark:border-slate-800/60">
-                            <div class="font-medium text-slate-800 dark:text-slate-100">${this.escapeHTML(item.problem)}</div>
-                            ${item.image ? `<img src="${item.image}" class="mt-2 max-h-24 rounded border border-slate-200 dark:border-slate-700">` : ''}
+                            <div class="font-medium text-slate-800 dark:text-slate-100">${this.renderMathText(item.problem)}</div>
+                            ${item.image ? `
+                                <div class="relative inline-block mt-2 group/img">
+                                    <img src="${item.image}" class="max-h-20 rounded border border-slate-200 dark:border-slate-700 cursor-pointer object-cover hover:scale-105 transition" onclick="app.openLightbox('${item.image}')">
+                                </div>
+                            ` : ''}
                             <div class="mt-2 flex items-center gap-1.5">
                                 <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${this.getStatusBadgeClass(item.status)}">
                                     ${item.status.toUpperCase()}
@@ -562,20 +617,20 @@
                         </td>
 
                         <td class="py-4 px-4 align-top border-r border-slate-100 dark:border-slate-800/60 bg-emerald-50/20 dark:bg-emerald-950/10">
-                            <div class="text-slate-700 dark:text-slate-300">${this.escapeHTML(item.solution)}</div>
+                            <div class="text-slate-700 dark:text-slate-300 leading-relaxed">${this.renderMathText(item.solution)}</div>
                         </td>
 
                         <td class="py-4 px-4 align-top border-r border-slate-100 dark:border-slate-800/60">
                             <span class="inline-block text-[11px] font-semibold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded mb-1.5">
                                 ${item.category}
                             </span>
-                            <div class="text-xs text-slate-600 dark:text-slate-400">${this.escapeHTML(item.reason)}</div>
+                            <div class="text-xs text-slate-600 dark:text-slate-400">${this.renderMathText(item.reason)}</div>
                         </td>
 
                         <td class="py-4 px-4 align-top border-r border-slate-100 dark:border-slate-800/60 bg-emerald-50/30 dark:bg-emerald-950/20">
                             <div class="font-medium text-emerald-900 dark:text-emerald-300 flex items-start gap-1">
                                 <span>💡</span>
-                                <span>${this.escapeHTML(item.avoidance || 'No prevention rule added')}</span>
+                                <div>${this.renderMathText(item.avoidance || 'No prevention rule added')}</div>
                             </div>
                         </td>
 
@@ -602,15 +657,16 @@
                                 <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${this.getStatusBadgeClass(item.status)}">${item.status}</span>
                                 <span class="text-xs text-slate-400">${item.subject}</span>
                             </div>
-                            <h4 class="font-medium text-slate-900 dark:text-slate-100 mb-2">${this.escapeHTML(item.problem)}</h4>
+                            <div class="font-medium text-slate-900 dark:text-slate-100 mb-2">${this.renderMathText(item.problem)}</div>
+                            ${item.image ? `<img src="${item.image}" class="max-h-28 rounded-lg mb-3 border border-slate-200 dark:border-slate-700 cursor-pointer object-cover" onclick="app.openLightbox('${item.image}')">` : ''}
                             <div class="text-xs bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 mb-3">
-                                <b>Sol:</b> ${this.escapeHTML(item.solution)}
+                                <b>Sol:</b> ${this.renderMathText(item.solution)}
                             </div>
                         </div>
                         <div>
                             <div class="text-xs text-rose-600 dark:text-rose-400 font-medium mb-1">⚠️ ${item.category}</div>
                             <div class="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded">
-                                💡 ${this.escapeHTML(item.avoidance)}
+                                💡 ${this.renderMathText(item.avoidance)}
                             </div>
                             <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                                 <button onclick="app.editMistake('${item.id}')" class="text-xs text-slate-400 hover:text-slate-600">Edit</button>
@@ -797,7 +853,7 @@
                 document.getElementById('removeImgBtn').classList.add('hidden');
             }
 
-            /* --- Gemini Flash AI Engine (Multi-Part & Thinking-Safe) --- */
+            /* --- Gemini Flash AI Engine --- */
             async analyzeWithAI() {
                 if (!this.geminiApiKey) {
                     alert('Please click "Gemini API" in the top bar to set your API Key first.');
@@ -817,7 +873,7 @@
                 
                 loadingOverlay.classList.remove('hidden');
                 scanBtn.setAttribute('disabled', 'true');
-                statusText.innerText = "Analyzing with Gemini Flash...";
+                statusText.innerText = `Analyzing with ${this.geminiModel}...`;
 
                 try {
                     const prompt = `You are a world-class academic tutor and diagnostic exam analyzer. 
@@ -827,7 +883,7 @@ Return ONLY a raw, valid JSON object without markdown fences, with these exact k
 {
   "subject": "Math", 
   "category": "Conceptual Error | Calculation / Silly Slip | Misread Question | Formula Forgotten | Time Pressure",
-  "problem": "Exact problem transcribed with LaTeX math formatting using $...$",
+  "problem": "Exact problem transcribed with LaTeX math formatting using $...$ or $$...$$",
   "solution": "Correct step-by-step mathematical derivation using LaTeX notation",
   "reason": "Clear diagnosis of why the error was made",
   "avoidance": "A 1-sentence actionable rule/mental-check to avoid this mistake in the future"
@@ -854,9 +910,7 @@ Return ONLY a raw, valid JSON object without markdown fences, with these exact k
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contents: [{ parts: parts }],
-                            generationConfig: {
-                                temperature: 0.1
-                            }
+                            generationConfig: { temperature: 0.1 }
                         })
                     });
 
@@ -867,22 +921,17 @@ Return ONLY a raw, valid JSON object without markdown fences, with these exact k
 
                     const result = await response.json();
                     
-                    // Safety / Block check
                     if (result.promptFeedback?.blockReason) {
                         throw new Error(`Request was blocked: ${result.promptFeedback.blockReason}`);
                     }
 
                     const rawParts = result.candidates?.[0]?.content?.parts || [];
-                    
-                    // Extract all text parts (handles multi-part reasoning tokens)
                     let fullText = rawParts.map(p => p.text || '').filter(Boolean).join('\n').trim();
 
                     if (!fullText) {
-                        const finishReason = result.candidates?.[0]?.finishReason;
-                        throw new Error(`No text generated by model (Finish reason: ${finishReason || 'UNKNOWN'})`);
+                        throw new Error(`No text generated by model.`);
                     }
 
-                    // Robust JSON extraction (handles ```json fences or raw text)
                     let data = null;
                     try {
                         data = JSON.parse(fullText);
@@ -895,7 +944,6 @@ Return ONLY a raw, valid JSON object without markdown fences, with these exact k
                         }
                     }
 
-                    // Auto-fill input fields
                     if (data.subject) document.getElementById('inputSubject').value = data.subject;
                     if (data.category) document.getElementById('inputReason').value = data.category;
                     if (data.problem) document.getElementById('inputProblem').value = data.problem;
@@ -905,7 +953,7 @@ Return ONLY a raw, valid JSON object without markdown fences, with these exact k
 
                 } catch (error) {
                     console.error('Gemini Analysis Failed:', error);
-                    alert(`Gemini AI Error: ${error.message}\n\nTip: You can switch models in the "Gemini API" settings menu.`);
+                    alert(`Gemini AI Error: ${error.message}`);
                 } finally {
                     loadingOverlay.classList.add('hidden');
                     scanBtn.removeAttribute('disabled');
@@ -929,34 +977,23 @@ Return ONLY a raw, valid JSON object without markdown fences, with these exact k
                 const item = this.drillQueue[this.drillIndex];
                 document.getElementById('drillSubjectBadge').innerText = item.subject + " • " + item.category;
                 document.getElementById('drillCounter').innerText = `${this.drillIndex + 1} / ${this.drillQueue.length}`;
-                document.getElementById('drillProblem').innerHTML = this.escapeHTML(item.problem);
+                document.getElementById('drillProblem').innerHTML = this.renderMathText(item.problem);
                 
                 const imgBox = document.getElementById('drillImageContainer');
-                imgBox.innerHTML = item.image ? `<img src="${item.image}" class="mt-2 max-h-40 rounded mx-auto border">` : '';
+                imgBox.innerHTML = item.image ? `<img src="${item.image}" class="mt-2 max-h-40 rounded mx-auto border cursor-pointer hover:opacity-90" onclick="app.openLightbox('${item.image}')">` : '';
 
-                document.getElementById('drillSolution').innerHTML = this.escapeHTML(item.solution);
-                document.getElementById('drillTakeaway').innerText = item.avoidance || "No takeaway recorded";
+                document.getElementById('drillSolution').innerHTML = this.renderMathText(item.solution);
+                document.getElementById('drillTakeaway').innerHTML = this.renderMathText(item.avoidance || "No takeaway recorded");
                 
                 document.getElementById('drillSolutionSection').classList.add('hidden');
                 document.getElementById('drillRevealBtn').classList.remove('hidden');
                 document.getElementById('drillRatingBtns').classList.add('hidden');
-
-                if (window.renderMathInElement) {
-                    renderMathInElement(document.getElementById('drillModal'), {
-                        delimiters: [{left: '$', right: '$', display: false}]
-                    });
-                }
             }
 
             revealDrill() {
                 document.getElementById('drillSolutionSection').classList.remove('hidden');
                 document.getElementById('drillRevealBtn').classList.add('hidden');
                 document.getElementById('drillRatingBtns').classList.remove('hidden');
-                if (window.renderMathInElement) {
-                    renderMathInElement(document.getElementById('drillSolutionSection'), {
-                        delimiters: [{left: '$', right: '$', display: false}]
-                    });
-                }
             }
 
             rateDrill(rating) {
@@ -1029,6 +1066,9 @@ Return ONLY a raw, valid JSON object without markdown fences, with these exact k
                     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                         e.preventDefault();
                         document.getElementById('searchInput').focus();
+                    }
+                    if (e.key === 'Escape') {
+                        this.closeLightbox();
                     }
                     if (e.key === ' ' && !document.getElementById('drillModal').classList.contains('hidden')) {
                         if (!document.getElementById('drillRevealBtn').classList.contains('hidden')) {
